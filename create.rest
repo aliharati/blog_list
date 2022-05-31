@@ -2,8 +2,8 @@ POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
-  "title": "Fullstack Structure of Backend",
-  "author": "Helsinky",
-  "url": "https://fullstackopen.com/en/part4/structure_of_backend_application_introduction_to_testing#exercises-4-1-4-2",
-  "likes": 52
+  "title": "Ielts tips",
+  "author": "Ielts Buddy",
+  "url": "https://www.ieltsbuddy.com/ielts-practice.html",
+  "likes": 20
 }
