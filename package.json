@@ -11,13 +11,15 @@
   "author": "Ali Harati",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-async-errors": "^3.1.1",
     "git": "^0.1.5",
-    "mongoose": "^6.3.4"
+    "mongoose": "^6.3.4",
+    "mongoose-unique-validator": "^3.1.0"
   },
   "devDependencies": {
     "jest": "^28.1.0",
