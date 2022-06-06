@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
 const supertest = require("supertest");
 const app = require("../app");
+const bcrypt = require("bcryptjs");
 const Blog = require("../models/blog");
+const User = require("../models/user");
+const user = require("../models/user");
 const api = supertest(app);
 
 const initialBlogs = [
@@ -19,12 +22,30 @@ const initialBlogs = [
   },
 ];
 beforeEach(async () => {
+  await User.deleteMany({});
+
+  const passwordHash = await bcrypt.hash("password", 10);
+  const user = new User({
+    username: "root",
+    name: "admin",
+    blogs: [],
+    passwordHash,
+  });
+  await user.save();
+}, 13000);
+beforeEach(async () => {
+  userId = await User.findOne({});
+  console.log("user", userId);
+
   await Blog.deleteMany({});
   for (let blog of initialBlogs) {
+    blog.user = userId;
+    console.log(blog);
     let blogObject = new Blog(blog);
     await blogObject.save();
   }
 }, 10000);
+
 describe("blog returns", () => {
   test("blogs are returned as json", async () => {
     await api
@@ -58,6 +79,20 @@ describe("view a specific blog", () => {
 });
 
 describe("adding new content", () => {
+  let headers;
+
+  beforeEach(async () => {
+    const user = {
+      username: "root",
+      password: "password",
+    };
+
+    const loginUser = await api.post("/api/login").send(user);
+
+    headers = {
+      Authorization: `bearer ${loginUser.body.token}`,
+    };
+  });
   test("content can be added to blogs", async () => {
     const newBlog = {
       title: "fullstack En",
@@ -65,10 +100,12 @@ describe("adding new content", () => {
       url: "https://fullstackopen.com/en/",
       likes: 70,
     };
+
     await api
       .post("/api/blogs")
       .send(newBlog)
       .expect(201)
+      .set(headers)
       .expect("Content-Type", /application\/json/);
 
     const response = await api.get("/api/blogs");
@@ -86,6 +123,7 @@ describe("adding new content", () => {
     await api
       .post("/api/blogs")
       .send(newBlog)
+      .set(headers)
       .expect(201)
       .expect("Content-Type", /application\/json/);
 
@@ -102,23 +140,34 @@ describe("adding new content", () => {
       title: "youyube",
       author: "y",
     };
-    await api.post("/api/blogs").send(blogOne).expect(400);
+    await api.post("/api/blogs").send(blogOne).set(headers).expect(400);
 
-    await api.post("/api/blogs").send(blogTwo).expect(400);
+    await api.post("/api/blogs").send(blogTwo).set(headers).expect(400);
   });
 });
 
 describe("updating and deleting a notes", () => {
-  test("deleting a note succeeds with status code 204", async () => {
+  let headers;
+  beforeEach(async () => {
+    const user = {
+      username: "root",
+      password: "password",
+    };
+    const loginUser = api.post("/api/login").send(user);
+    headers = {
+      Authorization: `bearer ${(await loginUser).body.token}`,
+    };
+  });
+  test("deleting a blog succeeds with status code 204", async () => {
     const blogsAtStart = await (
       await Blog.find({})
     ).map((blog) => blog.toJSON());
-    const blogToDelete = blogsAtStart[0];
+    const blogToDelete = blogsAtStart[1];
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+    await api.delete(`/api/blogs/${blogToDelete.id}`).set(headers).expect(204);
     const blogsAtEnd = await (await Blog.find({})).map((blog) => blog.toJSON());
     expect(blogsAtEnd).toHaveLength(blogsAtStart.length - 1);
-  });
+  }, 13000);
 
   test("updating a blogs title and likes is successful", async () => {
     const blogsAtStart = await (
